@@ -51,15 +51,22 @@ def xml_to_raml(xml_string):
 def main():
     st.title('Convertir XML en RAML avec Streamlit')
 
-    xml_input = st.text_area('Entrez le XML à convertir (copiez-collez votre XML ici) :', height=200)
+    xml_input = st.text_area('Entrez le XML à convertir (copiez-collez votre XML ici) :', height=400)
+
     if st.button('Convertir en RAML'):
         normalized_input = normalize_xml(xml_input)
-        st.write("\nXML normalisé en une seule ligne :")
-        st.code(normalized_input, language='xml')
 
-        raml_output = xml_to_raml(normalized_input)
-        st.write("\nRésultat en RAML :")
-        st.code(raml_output, language='yaml')
+        # Afficher les résultats avant et après en colonnes
+        col1, col2 = st.beta_columns(2)
+        with col1:
+            st.header("XML normalisé en une seule ligne :")
+            st.code(normalized_input, language='xml')
+
+        with col2:
+            st.header("Résultat en RAML :")
+            raml_output = xml_to_raml(normalized_input)
+            st.code(raml_output, language='yaml')
 
 if __name__ == "__main__":
     main()
+
