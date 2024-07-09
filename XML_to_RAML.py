@@ -19,52 +19,47 @@ def xml_to_raml(xml_string):
         tag_name = element.tag.split('}')[-1] if '}' in element.tag else element.tag
         elem_dict.append(f"{indent}{tag_name}:")
         elem_dict.append(f"{indent}  type: object")
+        elem_dict.append(f"{indent}  xml:")
+        elem_dict.append(f"{indent}    name: {tag_name}")
+        elem_dict.append(f"{indent}    wrapped: true")
 
         # Handle XML attributes
         attributes = element.attrib
         if attributes:
-            elem_dict.append(f"{indent}  xml:")
+            elem_dict.append(f"{indent}    properties:")
             for attr_key, attr_value in attributes.items():
-                elem_dict.append(f"{indent}    {attr_key}: {attr_value}")
+                elem_dict.append(f"{indent}      {attr_key}:")
+                elem_dict.append(f"{indent}        type: string")
+                elem_dict.append(f"{indent}        xml:")
+                elem_dict.append(f"{indent}          attribute: true")
+                elem_dict.append(f"{indent}          name: {attr_key}")
 
         # Handle child elements
         child_elements = list(element)
         if child_elements:
-            elem_dict.append(f"{indent}  properties:")
+            if not attributes:
+                elem_dict.append(f"{indent}  properties:")
             for child in child_elements:
-                child_tag_name = child.tag.split('}')[-1] if '}' in child.tag else child.tag
-                elem_dict.append(f"{indent}    {child_tag_name}:")
-                if len(child) > 0:  # if child has sub-elements
-                    elem_dict.append(f"{indent}      type: array")
-                    elem_dict.append(f"{indent}      xml:")
-                    elem_dict.append(f"{indent}        wrapped: false")
-                    elem_dict.append(f"{indent}      items:")
-                    elem_dict.append(f"{indent}        type: object")
-                    elem_dict.extend(parse_element(child, indent_level + 3))
-                else:  # if child has no sub-elements
-                    elem_dict.append(f"{indent}      type: {get_element_type(child)}")
+                elem_dict.extend(parse_element(child, indent_level + 1))
 
         return elem_dict
 
-    def get_element_type(element):
-        # Determine the RAML type based on the element content
-        if element.text and element.text.isdigit():
-            return "number"
-        elif element.text and element.text.count('-') == 2 and all(part.isdigit() for part in element.text.split('-')):
-            return "date"
-        else:
-            return "string"
-
-    for child in root:
-        raml.extend(parse_element(child))
+    raml.extend(parse_element(root))
 
     return '\n'.join(raml)
 
+def main():
+    st.title('Convertir XML en RAML avec Streamlit')
 
-st.title("XML to RAML Converter")
+    xml_input = st.text_area('Entrez le XML à convertir (copiez-collez votre XML ici) :', height=200)
+    if st.button('Convertir en RAML'):
+        normalized_input = normalize_xml(xml_input)
+        st.write("\nXML normalisé en une seule ligne :")
+        st.code(normalized_input, language='xml')
 
-xml_input = st.text_area("Enter XML here:", height=300)
-if st.button("Convert to RAML"):
-    normalized_input = normalize_xml(xml_input)
-    raml_output = xml_to_raml(normalized_input)
-    st.text_area("RAML Output:", raml_output, height=300)
+        raml_output = xml_to_raml(normalized_input)
+        st.write("\nRésultat en RAML :")
+        st.code(raml_output, language='yaml')
+
+if __name__ == "__main__":
+    main()
