@@ -1,5 +1,6 @@
 import re
 import xml.etree.ElementTree as ET
+import streamlit as st # type: ignore
 
 def normalize_xml(xml_input):
     # Supprimer les espaces, retours à la ligne et indentations
@@ -47,9 +48,9 @@ def xml_to_raml(xml_string):
 
     def get_element_type(element):
         # Determine the RAML type based on the element content
-        if element.text.isdigit():
+        if element.text and element.text.isdigit():
             return "number"
-        elif element.text.count('-') == 2 and all(part.isdigit() for part in element.text.split('-')):
+        elif element.text and element.text.count('-') == 2 and all(part.isdigit() for part in element.text.split('-')):
             return "date"
         else:
             return "string"
@@ -59,23 +60,11 @@ def xml_to_raml(xml_string):
 
     return '\n'.join(raml)
 
-def main():
-    print("Entrez le XML à convertir (tapez 'FIN' sur une ligne vide pour terminer l'entrée) :")
-    xml_lines = []
-    while True:
-        line = input()
-        if line.strip().upper() == 'FIN':
-            break
-        xml_lines.append(line)
 
-    xml_input = "\n".join(xml_lines)
+st.title("XML to RAML Converter")
+
+xml_input = st.text_area("Enter XML here:", height=300)
+if st.button("Convert to RAML"):
     normalized_input = normalize_xml(xml_input)
-    print("\nXML normalisé en une seule ligne :")
-    print(normalized_input)
-
     raml_output = xml_to_raml(normalized_input)
-    print("\nRésultat en RAML :\n")
-    print(raml_output)
-
-if __name__ == "__main__":
-    main()
+    st.text_area("RAML Output:", raml_output, height=300)
