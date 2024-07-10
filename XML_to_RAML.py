@@ -55,17 +55,12 @@ def main():
 
     if st.button('Convertir en RAML'):
         normalized_input = normalize_xml(xml_input)
+        st.header("XML normalisé en une seule ligne :")
+        st.code(normalized_input, language='xml')
 
-        # Afficher les résultats avant et après en colonnes
-        col1, col2 = st.columns(2)
-        with col1:
-            st.header("XML normalisé en une seule ligne :")
-            st.code(normalized_input, language='xml')
-
-        with col2:
-            st.header("Résultat en RAML :")
-            raml_output = xml_to_raml(normalized_input)
-            st.code(raml_output, language='yaml')
+        raml_output = xml_to_raml(normalized_input)
+        st.header("Résultat en RAML :")
+        st.code(raml_output, language='yaml')
 
 if __name__ == "__main__":
     main()
