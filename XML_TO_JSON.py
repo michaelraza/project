@@ -6,9 +6,9 @@ from collections import Counter
 def xml_to_dict(element):
     node = {}
     if element.attrib:
-        node['_'] = element.attrib
+        node.update({f"_{k}": v for k, v in element.attrib.items()})
     if element.text and element.text.strip():
-        node['__text'] = element.text.strip()
+        node["__text"] = element.text.strip()
     for child in element:
         child_dict = xml_to_dict(child)
         if child.tag not in node:
@@ -28,7 +28,6 @@ def identify_frequent_tag(root):
     tag_counter = Counter()
     extract_tags_and_depth(root, tag_counter, 1)
     if tag_counter:
-        # Trie par fréquence descendante puis par profondeur croissante
         most_common_tag, _ = sorted(tag_counter.items(), key=lambda item: (-item[1], item[0][1]))[0]
         return most_common_tag[0]
     return None
