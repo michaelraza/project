@@ -7,8 +7,6 @@ def xml_to_dict(element):
     node = {}
     if element.attrib:
         node.update({f"_{k}": v for k, v in element.attrib.items()})
-    if element.text and element.text.strip():
-        node["__text"] = element.text.strip()
     for child in element:
         child_dict = xml_to_dict(child)
         if child.tag not in node:
@@ -17,6 +15,11 @@ def xml_to_dict(element):
             if not isinstance(node[child.tag], list):
                 node[child.tag] = [node[child.tag]]
             node[child.tag].append(child_dict)
+    if element.text and element.text.strip():
+        if node:
+            node["__text"] = element.text.strip()
+        else:
+            return element.text.strip()
     return node
 
 def extract_tags_and_depth(element, tag_counter, depth):
@@ -38,7 +41,7 @@ output application/json
 ---
 """
     if frequent_tag:
-        dw_script += f"payload.{root.tag}.*{frequent_tag} map {{\n"
+        dw_script += f"payload.{root.tag}.{frequent_tag} map {{\n"
         child_example = root.find(f".//{frequent_tag}")
         if child_example is not None:
             for child in child_example:
