@@ -49,9 +49,9 @@ def xml_to_raml(xml_string):
     return '\n'.join(raml)
 
 def main():
-    st.title('Convertir XML en RAML avec Streamlit')
+    st.title('Convertir XML en RAML Datatypes By Michael Rza')
 
-    xml_input = st.text_area('Entrez le XML à convertir (copiez-collez votre XML ici) :', height=400)
+    xml_input = st.text_area('Entrez le XML à convertir (copiez-collez votre XML ici) :', height=800)
 
     if st.button('Convertir en RAML'):
         normalized_input = normalize_xml(xml_input)
