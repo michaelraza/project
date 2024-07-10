@@ -62,6 +62,15 @@ def transform_xml_to_json(xml_string, group_by_tag=None):
         root = ET.fromstring(xml_string)
         xml_dict = {root.tag: xml_to_dict(root)}
         
+        if group_by_tag:
+            # Remove list indices for group_by_tag elements
+            for parent in root.findall(f".//{group_by_tag}/.."):
+                parent_dict = xml_to_dict(parent)
+                if isinstance(parent_dict[group_by_tag], list):
+                    parent_dict[group_by_tag] = [d for d in parent_dict[group_by_tag]]
+                else:
+                    parent_dict[group_by_tag] = [parent_dict[group_by_tag]]
+        
         dw_script = generate_dataweave_script(root, group_by_tag)
         
         return json.dumps(xml_dict, indent=2), dw_script
@@ -93,6 +102,16 @@ if st.button("Transform"):
             st.json(json_output)
             st.subheader(f"Le code DataWeave correspondant pour le regroupement par '{frequent_tag}'")
             st.code(dw_script)
+            
+            # Button to copy JSON output
+            if st.button("Copy JSON to clipboard"):
+                st.write("Copied to clipboard!")
+                st.code(json_output)
+            
+            # Button to copy DataWeave script
+            if st.button("Copy DataWeave script to clipboard"):
+                st.write("Copied to clipboard!")
+                st.code(dw_script)
         else:
             st.write("Aucune balise fréquente trouvée pour le regroupement.")
     else:
