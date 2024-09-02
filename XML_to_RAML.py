@@ -1,6 +1,6 @@
 import re
 import xml.etree.ElementTree as ET
-import streamlit as st # type: ignore
+import streamlit as st  # type: ignore
 
 def normalize_xml(xml_input):
     # Supprimer les espaces, retours à la ligne et indentations
@@ -9,7 +9,11 @@ def normalize_xml(xml_input):
     return normalized_xml
 
 def xml_to_raml(xml_string):
-    root = ET.fromstring(xml_string)
+    try:
+        root = ET.fromstring(xml_string)
+    except ET.ParseError as e:
+        return f"Erreur de parsing XML : {e}"
+
     raml = ["#%RAML 1.0 DataType", "properties:"]
 
     def parse_element(element, indent_level=1):
@@ -44,7 +48,10 @@ def xml_to_raml(xml_string):
 
         return elem_dict
 
-    raml.extend(parse_element(root))
+    try:
+        raml.extend(parse_element(root))
+    except Exception as e:
+        return f"Erreur lors de la conversion en RAML : {e}"
 
     return '\n'.join(raml)
 
@@ -54,13 +61,24 @@ def main():
     xml_input = st.text_area('Entrez le XML à convertir (copiez-collez votre XML ici) :', height=400)
 
     if st.button('Convertir en RAML'):
-        normalized_input = normalize_xml(xml_input)
-        st.header("XML normalisé en une seule ligne :")
-        st.code(normalized_input, language='xml')
+        if not xml_input.strip():
+            st.error("Veuillez entrer un XML valide.")
+            return
 
-        raml_output = xml_to_raml(normalized_input)
-        st.header("Résultat en RAML :")
-        st.code(raml_output, language='yaml')
+        try:
+            normalized_input = normalize_xml(xml_input)
+            st.header("XML normalisé en une seule ligne :")
+            st.code(normalized_input, language='xml')
+
+            raml_output = xml_to_raml(normalized_input)
+            if "Erreur" in raml_output:
+                st.error(raml_output)
+            else:
+                st.header("Résultat en RAML :")
+                st.code(raml_output, language='yaml')
+
+        except Exception as e:
+            st.error(f"Erreur inattendue : {e}")
 
 if __name__ == "__main__":
     main()
