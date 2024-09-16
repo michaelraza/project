@@ -7,7 +7,8 @@ from collections import Counter
 def xml_to_dict(element):
     node = {}
     if element.attrib:
-        node.update({f"_{k}": v for k, v in element.attrib.items()})
+        # Ignore attributes not needed
+        node.update({f"_{k}": v for k, v in element.attrib.items() if k != 'image'})
     for child in element:
         child_dict = xml_to_dict(child)
         if child.tag not in node:
@@ -23,19 +24,22 @@ def xml_to_dict(element):
             return element.text.strip()
     return node
 
-# Fonction pour compter les balises et leur profondeur dans le XML
+# Fonction pour compter les balises, leur profondeur et leur proximité à la racine
 def extract_tags_and_depth(element, tag_counter, depth):
     tag_counter[(element.tag, depth)] += 1
     for child in element:
         extract_tags_and_depth(child, tag_counter, depth + 1)
 
-# Identification de la balise la plus fréquente pour regroupement
+# Identification de la balise la plus fréquente et la plus proche de la racine
 def identify_frequent_tag(root):
     tag_counter = Counter()
     extract_tags_and_depth(root, tag_counter, 1)
     if tag_counter:
-        most_common_tag, _ = sorted(tag_counter.items(), key=lambda item: (-item[1], item[0][1]))[0]
-        return most_common_tag[0]
+        # Trie d'abord par fréquence, puis par profondeur (proche de la racine)
+        sorted_tags = sorted(tag_counter.items(), key=lambda item: (-item[1], item[0][1]))
+        # Retourne la balise la plus fréquente et la plus proche de la racine
+        most_common_tag = min(sorted_tags, key=lambda item: item[0][1])[0]
+        return most_common_tag
     return None
 
 # Génération du script DataWeave
@@ -49,10 +53,9 @@ output application/json
         child_example = root.find(f".//{frequent_tag}")
         if child_example is not None:
             for child in child_example:
-                dw_script += f"  {child.tag}: $.{child.tag},\n"
-            if child_example.attrib:
-                for attr in child_example.attrib:
-                    dw_script += f"  _{attr}: $._.{attr},\n"
+                # Ignore attributes and elements not needed
+                if child.tag not in ['image', 'color_swatch']:
+                    dw_script += f"  {child.tag}: $.{child.tag},\n"
             dw_script = dw_script.rstrip(",\n") + "\n}"
         else:
             dw_script += "  // Aucun élément trouvé pour le regroupement\n}"
@@ -92,7 +95,7 @@ if st.button("Transform"):
     if xml_input.strip():
         root = ET.fromstring(xml_input)
         frequent_tag = identify_frequent_tag(root)
-        st.write(f"**La balise la plus fréquente est :** `{frequent_tag}`")
+        st.write(f"**La balise la plus fréquente et la plus proche de la racine est :** `{frequent_tag}`")
 
         # Transformation simple XML -> JSON
         json_output, dw_script = transform_xml_to_json(xml_input)
@@ -109,12 +112,11 @@ if st.button("Transform"):
             st.subheader(f"Le code DataWeave correspondant pour le regroupement par '{frequent_tag}'")
             st.code(dw_script)
             
-            # Bouton pour copier la sortie JSON
+            # Boutons pour copier la sortie JSON et le script DataWeave
             if st.button("Copy JSON to clipboard"):
                 st.write("Copied to clipboard!")
                 st.code(json_output)
             
-            # Bouton pour copier le script DataWeave
             if st.button("Copy DataWeave script to clipboard"):
                 st.write("Copied to clipboard!")
                 st.code(dw_script)
