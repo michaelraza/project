@@ -1,8 +1,9 @@
-import streamlit as st #type: ignore
+import streamlit as st # type: ignore
 import xml.etree.ElementTree as ET
 import json
 from collections import Counter
 
+# Fonction pour convertir un XML en dictionnaire Python
 def xml_to_dict(element):
     node = {}
     if element.attrib:
@@ -22,11 +23,13 @@ def xml_to_dict(element):
             return element.text.strip()
     return node
 
+# Fonction pour compter les balises et leur profondeur dans le XML
 def extract_tags_and_depth(element, tag_counter, depth):
     tag_counter[(element.tag, depth)] += 1
     for child in element:
         extract_tags_and_depth(child, tag_counter, depth + 1)
 
+# Identification de la balise la plus fréquente pour regroupement
 def identify_frequent_tag(root):
     tag_counter = Counter()
     extract_tags_and_depth(root, tag_counter, 1)
@@ -35,13 +38,14 @@ def identify_frequent_tag(root):
         return most_common_tag[0]
     return None
 
+# Génération du script DataWeave
 def generate_dataweave_script(root, frequent_tag):
     dw_script = """%dw 2.0
 output application/json
 ---
 """
     if frequent_tag:
-        dw_script += f"payload.{root.tag}.{frequent_tag} map {{\n"
+        dw_script += f"payload.{root.tag}.*{frequent_tag} map {{\n"
         child_example = root.find(f".//{frequent_tag}")
         if child_example is not None:
             for child in child_example:
@@ -57,13 +61,14 @@ output application/json
     
     return dw_script
 
+# Transformation XML en JSON avec option de regroupement
 def transform_xml_to_json(xml_string, group_by_tag=None):
     try:
         root = ET.fromstring(xml_string)
         xml_dict = {root.tag: xml_to_dict(root)}
         
         if group_by_tag:
-            # Remove list indices for group_by_tag elements
+            # Suppression des indices de liste pour les éléments groupés par balise
             for parent in root.findall(f".//{group_by_tag}/.."):
                 parent_dict = xml_to_dict(parent)
                 if isinstance(parent_dict[group_by_tag], list):
@@ -77,11 +82,12 @@ def transform_xml_to_json(xml_string, group_by_tag=None):
     except Exception as e:
         return f"Erreur lors du traitement du XML : {e}", ""
 
-# Streamlit app
+# Application Streamlit
 st.title("XML to JSON Transformer with DataWeave Script")
 
 st.header("Enter your XML")
 xml_input = st.text_area("XML input", height=300)
+
 if st.button("Transform"):
     if xml_input.strip():
         root = ET.fromstring(xml_input)
@@ -103,12 +109,12 @@ if st.button("Transform"):
             st.subheader(f"Le code DataWeave correspondant pour le regroupement par '{frequent_tag}'")
             st.code(dw_script)
             
-            # Button to copy JSON output
+            # Bouton pour copier la sortie JSON
             if st.button("Copy JSON to clipboard"):
                 st.write("Copied to clipboard!")
                 st.code(json_output)
             
-            # Button to copy DataWeave script
+            # Bouton pour copier le script DataWeave
             if st.button("Copy DataWeave script to clipboard"):
                 st.write("Copied to clipboard!")
                 st.code(dw_script)
