@@ -30,13 +30,13 @@ def xml_to_raml(xml_string):
         # Handle XML attributes
         attributes = element.attrib
         if attributes:
-            elem_dict.append(f"{indent}    properties:")
+            elem_dict.append(f"{indent}  properties:")
             for attr_key, attr_value in attributes.items():
-                elem_dict.append(f"{indent}      {attr_key}:")
-                elem_dict.append(f"{indent}        type: string")
-                elem_dict.append(f"{indent}        xml:")
-                elem_dict.append(f"{indent}          attribute: true")
-                elem_dict.append(f"{indent}          name: {attr_key}")
+                elem_dict.append(f"{indent}    {attr_key}:")
+                elem_dict.append(f"{indent}      type: string")
+                elem_dict.append(f"{indent}      xml:")
+                elem_dict.append(f"{indent}        attribute: true")
+                elem_dict.append(f"{indent}        name: {attr_key}")
 
         # Handle child elements
         child_elements = list(element)
