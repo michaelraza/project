@@ -3,7 +3,6 @@ import xml.etree.ElementTree as ET
 import streamlit as st  # type: ignore
 
 def normalize_xml(xml_input):
-    # Supprimer les espaces, retours à la ligne et indentations
     normalized_xml = re.sub(r'>\s+<', '><', xml_input)
     normalized_xml = normalized_xml.replace('\n', '').replace('\r', '').strip()
     return normalized_xml
@@ -14,7 +13,7 @@ def xml_to_raml(xml_string):
     except ET.ParseError as e:
         return f"Erreur de parsing XML : {e}"
 
-    raml = ["#%RAML 1.0 DataType", "properties:"]
+    raml = ["#%RAML 1.0 DataType", "type: object", "properties:"]
 
     def parse_element(element, indent_level=1):
         indent = '  ' * indent_level
@@ -27,18 +26,16 @@ def xml_to_raml(xml_string):
         elem_dict.append(f"{indent}    name: {tag_name}")
         elem_dict.append(f"{indent}    wrapped: true")
 
-        # Handle XML attributes
         attributes = element.attrib
         if attributes:
             elem_dict.append(f"{indent}  properties:")
-            for attr_key, attr_value in attributes.items():
+            for attr_key in attributes:
                 elem_dict.append(f"{indent}    {attr_key}:")
                 elem_dict.append(f"{indent}      type: string")
                 elem_dict.append(f"{indent}      xml:")
                 elem_dict.append(f"{indent}        attribute: true")
                 elem_dict.append(f"{indent}        name: {attr_key}")
 
-        # Handle child elements
         child_elements = list(element)
         if child_elements:
             if not attributes:
